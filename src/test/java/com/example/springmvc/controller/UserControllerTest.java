@@ -1,7 +1,7 @@
 package com.example.springmvc.controller;
 
 import com.example.springmvc.entity.User;
-import com.example.springmvc.repository.UserRepository;
+import com.example.springmvc.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,7 +18,6 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 import static org.mockito.Mockito.*;
 
@@ -28,23 +27,27 @@ public class UserControllerTest {
     @InjectMocks
     private UserController userController;
     @Mock
-    private UserRepository userRepository;
+    private UserService userService;
     private MockMvc mockMvc;
     private ObjectMapper objectMapper;
+    private User user;
+    private User user1;
+    private User updatedUser;
 
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(userController).build();
         objectMapper = new ObjectMapper();
+        user = new User(1L, "John", "john@example.com");
+        user1 = new User(2L, "Alice", "alice@example.com");
+        updatedUser = new User(2L, "John Doe", "johndoe@example.com");
     }
 
     @Test
     public void testGetAllUsers() throws Exception {
-        User user1 = new User(1L,"John", "john@example.com");
-        User user2 = new User(2L, "Alice", "alice@example.com");
-        List<User> userList = Arrays.asList(user1, user2);
+        List<User> userList = Arrays.asList(user, user1);
 
-        when(userRepository.findAll()).thenReturn(userList);
+        when(userService.findAll()).thenReturn(userList);
 
         mockMvc.perform(MockMvcRequestBuilders.get("/api/users")
                         .contentType(MediaType.APPLICATION_JSON))
@@ -54,13 +57,12 @@ public class UserControllerTest {
                 .andExpect(MockMvcResultMatchers.jsonPath("$[1].name").value("Alice"))
                 .andExpect(MockMvcResultMatchers.jsonPath("$[1].email").value("alice@example.com"));
 
-        verify(userRepository, times(1)).findAll();
+        verify(userService, times(1)).findAll();
     }
 
     @Test
     public void testGetUserById() throws Exception {
-        User user = new User(1L,"John", "john@example.com");
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userService.findById(1L)).thenReturn(user);
 
         mockMvc.perform(MockMvcRequestBuilders.get("/api/users/1")
                         .contentType(MediaType.APPLICATION_JSON))
@@ -68,28 +70,23 @@ public class UserControllerTest {
                 .andExpect(MockMvcResultMatchers.jsonPath("$.name").value("John"))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.email").value("john@example.com"));
 
-        verify(userRepository, times(1)).findById(1L);
+        verify(userService, times(1)).findById(1L);
     }
 
     @Test
     public void testCreateUser() throws Exception {
-        User user = new User(1L, "John", "john@example.com");
-
         mockMvc.perform(MockMvcRequestBuilders.post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(user)))
                 .andExpect(MockMvcResultMatchers.status().isCreated());
 
-        verify(userRepository, times(1)).save(user);
+        verify(userService, times(1)).createUser(user);
     }
 
     @Test
     public void testUpdateUser() throws Exception {
-        User user = new User(1L, "John", "john@example.com");
-        User updatedUser = new User(2L, "John Doe", "johndoe@example.com");
-
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(userRepository.save(user)).thenReturn(updatedUser);
+        when(userService.findById(1L)).thenReturn(user);
+        when(userService.createUser(user)).thenReturn(updatedUser);
 
         mockMvc.perform(MockMvcRequestBuilders.put("/api/users/1")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -98,8 +95,8 @@ public class UserControllerTest {
                 .andExpect(MockMvcResultMatchers.jsonPath("$.name").value("John Doe"))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.email").value("johndoe@example.com"));
 
-        verify(userRepository, times(1)).findById(1L);
-        verify(userRepository, times(1)).save(user);
+        verify(userService, times(1)).findById(1L);
+        verify(userService, times(1)).createUser(user);
     }
 
     @Test
@@ -108,6 +105,6 @@ public class UserControllerTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(MockMvcResultMatchers.status().isOk());
 
-        verify(userRepository, times(1)).deleteById(1L);
+        verify(userService, times(1)).deleteUser(1L);
     }
 }

@@ -1,8 +1,7 @@
 package com.example.springmvc.controller;
 
 import com.example.springmvc.entity.User;
-import com.example.springmvc.repository.UserRepository;
-import jakarta.persistence.EntityNotFoundException;
+import com.example.springmvc.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -15,45 +14,35 @@ import java.util.List;
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
 public class UserController {
-    private final UserRepository userRepository;
+    private final UserService userService;
 
     @GetMapping
     public List<User> getAllUsers() {
-        return userRepository.findAll();
+        return userService.findAll();
     }
 
     @GetMapping("/{userId}")
     public ResponseEntity<User> getUserById(@PathVariable Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException(String.valueOf(userId)));
+        User user = userService.findById(userId);
         return ResponseEntity.ok(user);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public User createUser(@Valid @RequestBody User user) {
-        return userRepository.save(user);
+        return userService.createUser(user);
     }
 
     @PutMapping("/{userId}")
     public ResponseEntity<User> updateUser(@PathVariable Long userId, @Valid @RequestBody User userDetails) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException(String.valueOf(userId)));
+        User updatedUser = userService.updateUser(userId, userDetails);
 
-        user.setName(userDetails.getName());
-        user.setEmail(userDetails.getEmail());
-
-        User updatedUser = userRepository.save(user);
         return ResponseEntity.ok(updatedUser);
     }
 
     @DeleteMapping("/{userId}")
     public ResponseEntity<?> deleteUser(@PathVariable Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException(String.valueOf(userId)));
-
-        userRepository.delete(user);
-
+        userService.deleteUser(userId);
         return ResponseEntity.ok().build();
     }
 }
