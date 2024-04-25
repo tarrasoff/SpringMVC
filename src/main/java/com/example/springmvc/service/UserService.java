@@ -26,14 +26,14 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public User updateUser(Long userId, User userDetails) {
-        User user = userRepository.findById(userId)
+    public User updateUser(Long userId, User user) {
+        User updateUser = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException(String.valueOf(userId)));
 
-        user.setName(userDetails.getName());
-        user.setEmail(userDetails.getEmail());
+        updateUser.setName(user.getName());
+        updateUser.setEmail(user.getEmail());
 
-        return userRepository.save(user);
+        return userRepository.save(updateUser);
     }
 
     public void deleteUser(Long userId) {
